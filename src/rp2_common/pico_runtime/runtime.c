@@ -36,6 +36,7 @@
 #endif
 
 extern char __StackLimit; /* Set by linker.  */
+extern void _exit(int status);
 
 uint32_t __attribute__((section(".ram_vector_table"))) ram_vector_table[48];
 
@@ -163,31 +164,17 @@ void runtime_init(void) {
 
     spin_locks_reset();
     irq_init_priorities();
-    alarm_pool_init_default();
-
-    // Start and end points of the constructor list,
-    // defined by the linker script.
-    extern void (*__init_array_start)(void);
-    extern void (*__init_array_end)(void);
-
-    // Call each function in the list.
-    // We have to take the address of the symbols, as __init_array_start *is*
-    // the first function pointer, not the address of it.
-    for (void (**p)(void) = &__init_array_start; p < &__init_array_end; ++p) {
-        (*p)();
-    }
-
 }
 
-void __attribute__((noreturn)) __attribute__((weak)) _exit(__unused int status) {
-#if PICO_ENTER_USB_BOOT_ON_EXIT
-    reset_usb_boot(0,0);
-#else
-    while (1) {
-        __breakpoint();
-    }
-#endif
-}
+// void __attribute__((noreturn)) __attribute__((weak)) _exit(__unused int status) {
+// #if PICO_ENTER_USB_BOOT_ON_EXIT
+//     reset_usb_boot(0,0);
+// #else
+//     while (1) {
+//         __breakpoint();
+//     }
+// #endif
+// }
 
 __attribute__((weak)) void *_sbrk(int incr) {
     extern char end; /* Set by linker.  */
@@ -256,9 +243,9 @@ __attribute((weak)) int _kill(__unused pid_t pid, __unused int sig) {
 }
 
 // exit is not useful... no desire to pull in __call_exitprocs
-void exit(int status) {
-    _exit(status);
-}
+// void exit(int status) {
+//     _exit(status);
+// }
 
 // incorrect warning from GCC 6
 GCC_Pragma("GCC diagnostic push")
